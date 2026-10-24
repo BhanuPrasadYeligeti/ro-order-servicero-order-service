@@ -55,6 +55,16 @@ sap.ui.define([
     }
   }
 
+  // Triggers a null pointer exception (TypeError) in the CAP backend -> HTTP 500 -> pushed to SAP Cloud ALM
+  async function simulateNullPointer() {
+    try {
+      await call("POST", "/simulateNullPointer", {});
+      MessageToast.show("Delivery address loaded");
+    } catch (e) {
+      MessageBox.error("Null pointer exception in backend – " + e.message);
+    }
+  }
+
   const productsTable = new Table({
     headerToolbar: new Toolbar({ content: [new Title({ text: "Products" }), new ToolbarSpacer(),
       new Button({ icon: "sap-icon://refresh", tooltip: "Refresh", press: load })] }),
@@ -83,7 +93,8 @@ sap.ui.define([
 
   const ordersTable = new Table({
     headerToolbar: new Toolbar({ content: [new Title({ text: "Sales Orders" }), new ToolbarSpacer(),
-      new Button({ text: "Sync to S/4HANA", icon: "sap-icon://synchronize", press: syncToS4 })] }),
+      new Button({ text: "Sync to S/4HANA", icon: "sap-icon://synchronize", press: syncToS4 }),
+      new Button({ text: "Simulate Null Pointer", icon: "sap-icon://error", type: "Reject", press: simulateNullPointer })] }),
     noDataText: "No orders yet",
     columns: ["Order", "Customer", "Product", "Qty", "Net Amount", "Status"].map((t) => new Column({ header: new Text({ text: t }) })),
     items: {
