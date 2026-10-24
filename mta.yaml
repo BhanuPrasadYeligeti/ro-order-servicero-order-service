@@ -34,6 +34,8 @@ modules:
     properties:
       SAP_CALM_SERVICE_NAME: ro-order-srv     # app name shown in SAP Cloud ALM
       SAP_CALM_SERVICE_TYPE: SAP_CP_CF        # SAP BTP, Cloud Foundry environment
+      NODE_ARGS: -r @sap/xotel-agent-ext-js   # preload the SAP Cloud ALM agent (start script: node ${NODE_ARGS} ./node_modules/.bin/cds-serve)
+      SAP_CALM_LOGS_ENABLED: true             # agent forwards the app's runtime log records (cds.log) to SAP Cloud ALM
     requires:
       - name: ro-order-destination            # lets the Cloud ALM agent read destination CALM_datacollector
       - name: ro-order-logs                   # Application Logging service -> logs in the Application Logging Dashboard
