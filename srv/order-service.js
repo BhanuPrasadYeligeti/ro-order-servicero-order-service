@@ -50,9 +50,19 @@ module.exports = class OrderService extends cds.ApplicationService {
       throw err;
     });
 
+    this.on('simulateNullPointer', async () => {
+      const orderNo = 'SO-00000000';
+      LOG.info(`simulateNullPointer started: reading delivery address of order ${orderNo}`);
+      // Real-world bug: the lookup returns null for an unknown order and the code reads a property of it
+      // without a null check. Deliberately NOT caught -> TypeError -> HTTP 500 + stack trace -> Cloud ALM.
+      const order = await SELECT.one.from(Orders).where({ orderNo });
+      const city = order.shippingAddress.city; // order is null -> TypeError: Cannot read properties of null
+      return `Order ${orderNo} ships to ${city}`;
+    });
+
     // Every failed request (4xx business errors and 5xx technical errors) is logged with cds.log.
-    // @cap-js/telemetry hands every cds.log record to the SAP Cloud ALM agent (ExmLogProcessor, see package.json),
-    // so the error - with exception.message / exception.stacktrace when an Error object is passed - shows up in SAP Cloud ALM.
+    // srv/calm-push.js picks up every warning/error cds.log record and pushes it to SAP Cloud ALM (IEM -> Exceptions),
+    // with exception.message / exception.stacktrace when an Error object is passed.
     this.on('error', (err, req) => {
       const status = err.status || err.statusCode || (Number(err.code) >= 400 ? Number(err.code) : 500);
       const what = (req && (req.event || req.path)) || (err.target ? `request on ${err.target}` : 'OrderService request');
