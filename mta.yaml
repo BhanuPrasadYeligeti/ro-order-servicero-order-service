@@ -12,6 +12,8 @@ build-parameters:
       commands:
         - npm install
         - npx cds build --production
+        # copy SAP repository auth (.npmrc) so CF staging can download the Cloud ALM agent
+        - cp .npmrc gen/srv/.npmrc
 
 modules:
   # Backend: CAP Node.js OData V4 service (in-memory SQLite, demo data loaded at start)
@@ -25,6 +27,11 @@ modules:
     build-parameters:
       builder: npm
       ignore: [".env", "node_modules/"]
+    properties:
+      SAP_CALM_SERVICE_NAME: ro-order-srv     # app name shown in SAP Cloud ALM
+      SAP_CALM_SERVICE_TYPE: SAP_CP_CF        # SAP BTP, Cloud Foundry environment
+    requires:
+      - name: ro-order-destination            # lets the Cloud ALM agent read destination CALM_datacollector
     provides:
       - name: srv-api
         properties:
@@ -47,3 +54,12 @@ modules:
           name: srv-api
           url: ~{srv-url}
           forwardAuthToken: false
+
+resources:
+  # Destination service instance (plan lite, free on trial). The SAP Cloud ALM agent uses it to read
+  # the subaccount destination CALM_datacollector (Cloud ALM API URL + OAuth client credentials).
+  - name: ro-order-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
