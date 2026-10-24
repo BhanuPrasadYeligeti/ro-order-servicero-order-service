@@ -1,0 +1,49 @@
+_schema-version: "3.1"
+ID: ro-order-fullstack
+version: 1.0.0
+description: Sales order app - SAPUI5 front end + CAP Node.js backend + approuter (BTP CF trial, no HANA)
+
+parameters:
+  enable-parallel-deployments: true
+
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm install
+        - npx cds build --production
+
+modules:
+  # Backend: CAP Node.js OData V4 service (in-memory SQLite, demo data loaded at start)
+  - name: ro-order-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      buildpack: nodejs_buildpack
+      memory: 256M
+      disk-quota: 512M
+    build-parameters:
+      builder: npm
+      ignore: [".env", "node_modules/"]
+    provides:
+      - name: srv-api
+        properties:
+          srv-url: ${default-url}
+
+  # Front end: SAPUI5 app served by the SAP Application Router, which forwards /odata to the backend
+  - name: ro-order-app
+    type: approuter.nodejs
+    path: app/router
+    parameters:
+      memory: 256M
+      disk-quota: 512M
+      keep-existing-routes: true
+    build-parameters:
+      ignore: ["node_modules/"]
+    requires:
+      - name: srv-api
+        group: destinations
+        properties:
+          name: srv-api
+          url: ~{srv-url}
+          forwardAuthToken: false
