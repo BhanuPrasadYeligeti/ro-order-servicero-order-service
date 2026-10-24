@@ -10,8 +10,10 @@ build-parameters:
   before-all:
     - builder: custom
       commands:
-        - npm install
-        - npx cds build --production
+        # The build image may run an old Node.js (e.g. Piper's mbtci-java11-node16), but @sap/cds 9 needs Node >= 20:
+        # install without native builds, then run "cds build" with a Node 22 binary fetched from npm.
+        - npm install --ignore-scripts
+        - npx -y -p node@22 node node_modules/@sap/cds-dk/bin/cds.js build --production
         # copy SAP repository auth (.npmrc) so CF staging can download the Cloud ALM agent
         - cp .npmrc gen/srv/.npmrc
 
@@ -25,7 +27,9 @@ modules:
       memory: 256M
       disk-quota: 512M
     build-parameters:
-      builder: npm
+      # no npm install in the build container: Cloud Foundry installs the dependencies during staging (Node 22)
+      builder: custom
+      commands: []
       ignore: [".env", "node_modules/"]
     properties:
       SAP_CALM_SERVICE_NAME: ro-order-srv     # app name shown in SAP Cloud ALM
@@ -46,6 +50,9 @@ modules:
       disk-quota: 512M
       keep-existing-routes: true
     build-parameters:
+      # no npm install in the build container: Cloud Foundry installs the approuter during staging (Node 22)
+      builder: custom
+      commands: []
       ignore: ["node_modules/"]
     requires:
       - name: srv-api
