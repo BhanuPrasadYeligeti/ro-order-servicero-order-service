@@ -1,5 +1,6 @@
 const cds = require('@sap/cds');
 const LOG = cds.log('order-service');
+const calmLog = require('./calm-log');
 
 module.exports = class OrderService extends cds.ApplicationService {
   async init() {
@@ -48,6 +49,14 @@ module.exports = class OrderService extends cds.ApplicationService {
       const err = new Error('Connection to S/4HANA backend failed: connect ECONNREFUSED 10.20.30.40:443 (destination S4H_SALES_ORDER)');
       err.code = 'ECONNREFUSED';
       throw err;
+    });
+
+    // Every failed request (4xx business errors and 5xx technical errors) is also written with
+    // cf-nodejs-logging-support, so SAP Cloud ALM Exception Monitoring picks it up.
+    this.on('error', (err, req) => {
+      const status = err.status || err.statusCode || (Number(err.code) >= 400 ? Number(err.code) : 500);
+      const what = (req && (req.event || req.path)) || (err.target ? `request on ${err.target}` : 'OrderService request');
+      calmLog.error(`${what} failed with HTTP ${status}: ${err.message}${status >= 500 && err.stack ? '\n' + err.stack : ''}`);
     });
 
     return super.init();
