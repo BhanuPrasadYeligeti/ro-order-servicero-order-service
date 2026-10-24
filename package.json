@@ -9,13 +9,18 @@
   "dependencies": {
     "@sap/cds": "^9",
     "@cap-js/sqlite": "^2",
-    "express": "^4"
+    "express": "^4",
+    "cf-nodejs-logging-support": "7.5.5-beta.1",
+    "@sap/opentelemetry-exporter-for-sap-cloud-logging": "0.7.0"
+  },
+  "optionalDependencies": {
+    "@sap/xotel-agent-ext-js": "https://73555000100200018064.npmsrv.cdn.repositories.cloud.sap/@sap/xotel-agent-ext-js/-/xotel-agent-ext-js-2.0.5.tgz"
   },
   "devDependencies": {
     "@sap/cds-dk": "^9"
   },
   "scripts": {
-    "start": "cds-serve",
+    "start": "NODE_OPTIONS=\"--require ./srv/calm-agent.js\" cds-serve",
     "watch": "cds watch"
   },
   "cds": {
