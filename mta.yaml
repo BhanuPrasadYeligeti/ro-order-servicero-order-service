@@ -14,8 +14,6 @@ build-parameters:
         # install without native builds, then run "cds build" with a Node 22 binary fetched from npm.
         - npm install --ignore-scripts
         - npx -y -p node@22 node node_modules/@sap/cds-dk/bin/cds.js build --production
-        # copy SAP repository auth (.npmrc) so CF staging can download the Cloud ALM agent
-        - cp .npmrc gen/srv/.npmrc
 
 modules:
   # Backend: CAP Node.js OData V4 service (in-memory SQLite, demo data loaded at start)
@@ -34,8 +32,6 @@ modules:
     properties:
       SAP_CALM_SERVICE_NAME: ro-order-srv     # app name shown in SAP Cloud ALM
       SAP_CALM_SERVICE_TYPE: SAP_CP_CF        # SAP BTP, Cloud Foundry environment
-      NODE_ARGS: -r @sap/xotel-agent-ext-js   # preload the SAP Cloud ALM agent (start script: node ${NODE_ARGS} ./node_modules/.bin/cds-serve)
-      SAP_CALM_LOGS_ENABLED: true             # agent forwards the app's runtime log records (cds.log) to SAP Cloud ALM
       # Trial workaround: push warnings/errors to the service created manually in Cloud ALM (srv/calm-push.js)
       SAP_CALM_PUSH_ENABLED: true
       SAP_CALM_PUSH_SERVICE_ID: "dfee1177-e99b-428e-90d9-a472b7e6e245"            # <- LMS ID of the ro-order-srv service in Cloud ALM Landscape Management
