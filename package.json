@@ -1,0 +1,39 @@
+{
+  "name": "ro-order-fullstack",
+  "version": "1.0.0",
+  "description": "Sales order app: SAPUI5 front end + CAP Node.js backend + approuter (SAP BTP Cloud Foundry)",
+  "private": true,
+  "engines": {
+    "node": "^22.0.0"
+  },
+  "dependencies": {
+    "@sap/cds": "^9",
+    "@cap-js/sqlite": "^2",
+    "express": "^4"
+  },
+  "devDependencies": {
+    "@sap/cds-dk": "^9"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch": "cds watch"
+  },
+  "cds": {
+    "requires": {
+      "db": {
+        "kind": "sqlite",
+        "credentials": {
+          "url": ":memory:"
+        }
+      },
+      "auth": {
+        "kind": "dummy"
+      }
+    },
+    "log": {
+      "levels": {
+        "order-service": "info"
+      }
+    }
+  }
+}
