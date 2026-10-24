@@ -10,17 +10,15 @@
     "@sap/cds": "^9",
     "@cap-js/sqlite": "^2",
     "express": "^4",
-    "cf-nodejs-logging-support": "7.5.5-beta.1",
-    "@sap/opentelemetry-exporter-for-sap-cloud-logging": "0.7.0"
-  },
-  "optionalDependencies": {
-    "@sap/xotel-agent-ext-js": "https://73555000100200018064.npmsrv.cdn.repositories.cloud.sap/@sap/xotel-agent-ext-js/-/xotel-agent-ext-js-2.0.5.tgz"
+    "@sap/xotel-agent-ext-js": "https://73555000100200018064.npmsrv.cdn.repositories.cloud.sap/@sap/xotel-agent-ext-js/-/xotel-agent-ext-js-2.0.5.tgz",
+    "@cap-js/telemetry": "2.0.1",
+    "@opentelemetry/exporter-logs-otlp-grpc": "0.219.0"
   },
   "devDependencies": {
     "@sap/cds-dk": "^9"
   },
   "scripts": {
-    "start": "NODE_OPTIONS=\"--require ./srv/calm-agent.js\" cds-serve",
+    "start": "node ${NODE_ARGS} ./node_modules/.bin/cds-serve",
     "watch": "cds watch"
   },
   "cds": {
@@ -33,11 +31,32 @@
       },
       "auth": {
         "kind": "dummy"
+      },
+      "telemetry": {
+        "tracing": {
+          "exporter": null
+        },
+        "metrics": {
+          "exporter": null
+        },
+        "logging": {
+          "processor": {
+            "module": "@sap/xotel-agent-ext-js",
+            "class": "ExmLogProcessor"
+          },
+          "exporter": {
+            "module": "@opentelemetry/exporter-logs-otlp-grpc",
+            "class": "OTLPLogExporter"
+          }
+        }
       }
     },
     "log": {
       "levels": {
         "order-service": "info"
+      },
+      "[production]": {
+        "format": "json"
       }
     }
   }
