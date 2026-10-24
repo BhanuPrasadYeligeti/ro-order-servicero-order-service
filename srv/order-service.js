@@ -1,6 +1,5 @@
 const cds = require('@sap/cds');
 const LOG = cds.log('order-service');
-const calmLog = require('./calm-log');
 
 module.exports = class OrderService extends cds.ApplicationService {
   async init() {
@@ -51,12 +50,14 @@ module.exports = class OrderService extends cds.ApplicationService {
       throw err;
     });
 
-    // Every failed request (4xx business errors and 5xx technical errors) is also written with
-    // cf-nodejs-logging-support, so SAP Cloud ALM Exception Monitoring picks it up.
+    // Every failed request (4xx business errors and 5xx technical errors) is logged with cds.log.
+    // @cap-js/telemetry hands every cds.log record to the SAP Cloud ALM agent (ExmLogProcessor, see package.json),
+    // so the error - with exception.message / exception.stacktrace when an Error object is passed - shows up in SAP Cloud ALM.
     this.on('error', (err, req) => {
       const status = err.status || err.statusCode || (Number(err.code) >= 400 ? Number(err.code) : 500);
       const what = (req && (req.event || req.path)) || (err.target ? `request on ${err.target}` : 'OrderService request');
-      calmLog.error(`${what} failed with HTTP ${status}: ${err.message}${status >= 500 && err.stack ? '\n' + err.stack : ''}`);
+      if (status >= 500) LOG.error(`${what} failed with HTTP ${status}:`, err);
+      else LOG.error(`${what} failed with HTTP ${status}: ${err.message}`);
     });
 
     return super.init();
