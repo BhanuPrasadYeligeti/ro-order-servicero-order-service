@@ -36,22 +36,33 @@ Open the **ro-order-app** route, e.g. `https://<org>-<space>-ro-order-app.cfapps
 
 The error scenarios are intentional, so there is real runtime data for monitoring (e.g. SAP Cloud ALM Integration & Exception Monitoring).
 
-## SAP Cloud ALM (Integration & Exception Monitoring)
+## SAP Cloud ALM (runtime logs + Exception Monitoring)
 
-The backend is prepared for SAP's supported setup (SAP Cloud ALM Expert Portal -> OpenTelemetry@SAP, Node.js):
+The backend follows SAP's supported setup (SAP Cloud ALM Expert Portal -> OpenTelemetry@SAP -> Auto-instrumentation for Node.js,
+variant "Custom-built applications using CDS library"). Every `cds.log` record of `ro-order-srv` (info / warn / error, incl. the
+framework loggers `cds`, `odata`) is handed to the SAP Cloud ALM agent, which sends it to SAP Cloud ALM.
+
+```
+cds.log('order-service').error(...)  ->  @cap-js/telemetry (logging)  ->  ExmLogProcessor (@sap/xotel-agent-ext-js)  ->  destination CALM_datacollector  ->  SAP Cloud ALM
+```
 
 | Piece | Where |
 |---|---|
-| SAP Cloud ALM agent `@sap/xotel-agent-ext-js` 2.0.5, preloaded before CAP | `package.json` (optionalDependencies, start script), `srv/calm-agent.js` |
-| Errors written with `cf-nodejs-logging-support` (every 4xx/5xx of OrderService) | `srv/calm-log.js`, `srv/order-service.js` |
-| `SAP_CALM_SERVICE_NAME` / `SAP_CALM_SERVICE_TYPE: SAP_CP_CF` | `mta.yaml` (ro-order-srv) |
+| SAP Cloud ALM agent `@sap/xotel-agent-ext-js` 2.0.5 (from SAP's repository) | `package.json` dependencies, `.npmrc` (copied to `gen/srv` at build) |
+| Agent preloaded with `NODE_ARGS: -r @sap/xotel-agent-ext-js`, start script `node ${NODE_ARGS} ./node_modules/.bin/cds-serve` | `mta.yaml` (ro-order-srv), `package.json` scripts |
+| `@cap-js/telemetry` logging -> processor `ExmLogProcessor`, exporter `OTLPLogExporter` (grpc) | `package.json` -> `cds.requires.telemetry.logging` |
+| `@cap-js/telemetry` own tracing/metrics exporters switched off (the agent already sends traces/metrics) | `package.json` -> `tracing.exporter: null`, `metrics.exporter: null` |
+| JSON log format in production (required for log export) | `package.json` -> `cds.log.[production].format: json` |
+| Errors logged with `cds.log`; 5xx errors pass the Error object -> `exception.message` / `exception.stacktrace` | `srv/order-service.js` |
+| `SAP_CALM_SERVICE_NAME` / `SAP_CALM_SERVICE_TYPE: SAP_CP_CF` / `SAP_CALM_LOGS_ENABLED: true` | `mta.yaml` (ro-order-srv) |
 | Destination service binding, so the agent finds the subaccount destination `CALM_datacollector` | `mta.yaml` (resource `ro-order-destination`) |
-| SAP repository (RBSC) auth via `SAP_NPM_AUTH` | `.npmrc` (copied to `gen/srv` at build) |
 
-**To activate:** set `SAP_NPM_AUTH` (RBSC technical user "NPM Base64 Credentials" from SAP for Me) as a secret build variable
-and as a user-provided variable of `ro-order-srv`, then build & deploy. The backend log shows
-`[calm] SAP Cloud ALM agent loaded` when it is active (otherwise `... NOT installed`; the app works either way).
-Then in Cloud ALM: IEM -> Configuration -> switch the subaccount service (SAP BTP, Cloud Foundry environment) ON with **Node.js Application Logs**.
+**To activate in SAP Cloud ALM:** build & deploy, then in Cloud ALM open the monitoring app (e.g. Integration & Exception Monitoring)
+-> Configuration -> switch the service `ro-order-srv` (SAP BTP, Cloud Foundry environment) ON for the use case.
+Then trigger traffic in the UI (Place Order for HT-1068 -> 409, Sync to S/4HANA -> 500).
+
+**Troubleshooting:** `SAP_CALM_DCI_LOG_LEVEL=debug` (agent log), `OTEL_LOG_LEVEL=info` (OpenTelemetry diagnostics).
+Emergency off switch: `SAP_CALM_LOGS_ENABLED=false` (logs only) or `SAP_CALM_INSTRUMENTATION_ENABLED=false` (everything), then restart.
 
 ## Notes
 
