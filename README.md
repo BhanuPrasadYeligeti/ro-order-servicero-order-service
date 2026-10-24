@@ -36,6 +36,23 @@ Open the **ro-order-app** route, e.g. `https://<org>-<space>-ro-order-app.cfapps
 
 The error scenarios are intentional, so there is real runtime data for monitoring (e.g. SAP Cloud ALM Integration & Exception Monitoring).
 
+## SAP Cloud ALM (Integration & Exception Monitoring)
+
+The backend is prepared for SAP's supported setup (SAP Cloud ALM Expert Portal -> OpenTelemetry@SAP, Node.js):
+
+| Piece | Where |
+|---|---|
+| SAP Cloud ALM agent `@sap/xotel-agent-ext-js` 2.0.5, preloaded before CAP | `package.json` (optionalDependencies, start script), `srv/calm-agent.js` |
+| Errors written with `cf-nodejs-logging-support` (every 4xx/5xx of OrderService) | `srv/calm-log.js`, `srv/order-service.js` |
+| `SAP_CALM_SERVICE_NAME` / `SAP_CALM_SERVICE_TYPE: SAP_CP_CF` | `mta.yaml` (ro-order-srv) |
+| Destination service binding, so the agent finds the subaccount destination `CALM_datacollector` | `mta.yaml` (resource `ro-order-destination`) |
+| SAP repository (RBSC) auth via `SAP_NPM_AUTH` | `.npmrc` (copied to `gen/srv` at build) |
+
+**To activate:** set `SAP_NPM_AUTH` (RBSC technical user "NPM Base64 Credentials" from SAP for Me) as a secret build variable
+and as a user-provided variable of `ro-order-srv`, then build & deploy. The backend log shows
+`[calm] SAP Cloud ALM agent loaded` when it is active (otherwise `... NOT installed`; the app works either way).
+Then in Cloud ALM: IEM -> Configuration -> switch the subaccount service (SAP BTP, Cloud Foundry environment) ON with **Node.js Application Logs**.
+
 ## Notes
 
 - Demo only: no authentication (`authenticationMethod: none`, CAP `auth: dummy`). Don't use it for real data.
