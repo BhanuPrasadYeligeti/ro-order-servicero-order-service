@@ -1,0 +1,15 @@
+{
+  "name": "ro-order-approuter",
+  "version": "1.0.0",
+  "description": "Application router: serves the UI5 order app and forwards /odata calls to the CAP backend",
+  "private": true,
+  "engines": {
+    "node": "^22.0.0"
+  },
+  "dependencies": {
+    "@sap/approuter": "^23.3.0"
+  },
+  "scripts": {
+    "start": "node node_modules/@sap/approuter/approuter.js"
+  }
+}
