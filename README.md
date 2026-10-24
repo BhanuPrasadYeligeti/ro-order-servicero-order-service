@@ -64,6 +64,35 @@ Then trigger traffic in the UI (Place Order for HT-1068 -> 409, Sync to S/4HANA 
 **Troubleshooting:** `SAP_CALM_DCI_LOG_LEVEL=debug` (agent log), `OTEL_LOG_LEVEL=info` (OpenTelemetry diagnostics).
 Emergency off switch: `SAP_CALM_LOGS_ENABLED=false` (logs only) or `SAP_CALM_INSTRUMENTATION_ENABLED=false` (everything), then restart.
 
+## SAP Cloud ALM on a BTP trial subaccount (push via Raw Data Inbound Logs API)
+
+A trial subaccount is not discovered by Cloud ALM automatically. Therefore `srv/calm-push.js` also pushes every
+**warning and error** written with `cds.log` to a service that is created **manually** in Cloud ALM:
+
+```
+cds.log warn/error -> srv/calm-push.js (buffer) -> destination CALM_datacollector (OAuth2 client credentials)
+  -> POST <Cloud ALM>/api/calm-logs/v1/logs?useCase=exm.im&serviceId=<LMS ID>  -> IEM -> Exceptions
+```
+
+| Setting (`mta.yaml`, ro-order-srv) | Meaning |
+|---|---|
+| `SAP_CALM_PUSH_ENABLED` | `true` switches the push on |
+| `SAP_CALM_PUSH_SERVICE_ID` | LMS ID of the service in Cloud ALM Landscape Management (mandatory, push stays off while empty) |
+| `SAP_CALM_PUSH_DESTINATION` | BTP destination to the Cloud ALM API (default `CALM_datacollector`) |
+| `SAP_CALM_PUSH_USE_CASE` | `exm.im` = Integration & Exception Monitoring exceptions |
+| `SAP_CALM_PUSH_DEV` | `true` = synchronous dev mode with error details (max 100 calls / 24 h); `false` for normal use |
+| `SAP_CALM_PUSH_INTERVAL` | seconds between pushes (default 60, 900 in dev mode) |
+| `SAP_CALM_PUSH_LEVEL` | `warn` (default, warnings + errors) or `error` |
+
+Prerequisites in Cloud ALM / BTP:
+1. Landscape Management: create the service for `ro-order-srv` and copy its **LMS ID** into `SAP_CALM_PUSH_SERVICE_ID`
+   (or without redeploy: `cf set-env ro-order-srv SAP_CALM_PUSH_SERVICE_ID <id>` + `cf restart ro-order-srv`).
+2. Integration & Exception Monitoring -> Configuration: switch data collection **on** for that service (otherwise HTTP 403).
+3. The OAuth client in destination `CALM_datacollector` needs the scopes `calm-api.logs.write` and `calm-api.exm.write`.
+
+The backend log shows `SAP Cloud ALM log push active ...` and `pushed N log record(s) to SAP Cloud ALM (HTTP 202)`,
+or `push to SAP Cloud ALM failed ...` with the HTTP status and Cloud ALM's error text.
+
 ## Notes
 
 - Demo only: no authentication (`authenticationMethod: none`, CAP `auth: dummy`). Don't use it for real data.
