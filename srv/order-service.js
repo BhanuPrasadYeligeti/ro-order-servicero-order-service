@@ -39,6 +39,10 @@ module.exports = class OrderService extends cds.ApplicationService {
       };
       await INSERT.into(Orders).entries(order);
       LOG.info(`Order ${order.orderNo} created for ${customer}: ${quantity} x ${productID} = ${order.netAmount} ${order.currency}`);
+
+       // Demo for SAP Cloud ALM: every successful order writes one warning and one error log
+      LOG.warn(`Order ${order.orderNo}: stock for ${productID} is low after this order (${product.stock - quantity} left, reorder level 20)`);
+      LOG.error(`Order ${order.orderNo}: credit check for customer "${customer}" failed - credit service (destination CREDIT_CHECK_SRV) not reachable, order saved without credit check`);
       return order;
     });
 
