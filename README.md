@@ -36,62 +36,35 @@ Open the **ro-order-app** route, e.g. `https://<org>-<space>-ro-order-app.cfapps
 
 The error scenarios are intentional, so there is real runtime data for monitoring (e.g. SAP Cloud ALM Integration & Exception Monitoring).
 
-## SAP Cloud ALM (runtime logs + Exception Monitoring)
+## SAP Cloud ALM (OpenTelemetry@SAP, Exception Monitoring)
 
-The backend follows SAP's supported setup (SAP Cloud ALM Expert Portal -> OpenTelemetry@SAP -> Auto-instrumentation for Node.js,
-variant "Custom-built applications using CDS library"). Every `cds.log` record of `ro-order-srv` (info / warn / error, incl. the
-framework loggers `cds`, `odata`) is handed to the SAP Cloud ALM agent, which sends it to SAP Cloud ALM.
+Branch `OpenTelemantary` follows SAP Cloud ALM Expert Portal -> OpenTelemetry@SAP -> Auto-instrumentation for Node.js,
+"Additional steps for Exception Monitoring -> Custom-built applications using CDS library".
 
 ```
-cds.log('order-service').error(...)  ->  @cap-js/telemetry (logging)  ->  ExmLogProcessor (@sap/xotel-agent-ext-js)  ->  destination CALM_datacollector  ->  SAP Cloud ALM
+cds.log('order-service').error(...) -> @cap-js/telemetry -> ExmLogProcessor (@sap/xotel-agent-ext-js)
+  -> destination CALM_datacollector (OAuth2ClientCredentials) -> SAP Cloud ALM -> IEM -> Exceptions
 ```
 
 | Piece | Where |
 |---|---|
-| SAP Cloud ALM agent `@sap/xotel-agent-ext-js` 2.0.5 (from SAP's repository) | `package.json` dependencies, `.npmrc` (copied to `gen/srv` at build) |
-| Agent preloaded with `NODE_ARGS: -r @sap/xotel-agent-ext-js`, start script `node ${NODE_ARGS} ./node_modules/.bin/cds-serve` | `mta.yaml` (ro-order-srv), `package.json` scripts |
-| `@cap-js/telemetry` logging -> processor `ExmLogProcessor`, exporter `OTLPLogExporter` (grpc) | `package.json` -> `cds.requires.telemetry.logging` |
-| `@cap-js/telemetry` own tracing/metrics exporters switched off (the agent already sends traces/metrics) | `package.json` -> `tracing.exporter: null`, `metrics.exporter: null` |
-| JSON log format in production (required for log export) | `package.json` -> `cds.log.[production].format: json` |
-| Errors logged with `cds.log`; 5xx errors pass the Error object -> `exception.message` / `exception.stacktrace` | `srv/order-service.js` |
-| `SAP_CALM_SERVICE_NAME` / `SAP_CALM_SERVICE_TYPE: SAP_CP_CF` / `SAP_CALM_LOGS_ENABLED: true` | `mta.yaml` (ro-order-srv) |
-| Destination service binding, so the agent finds the subaccount destination `CALM_datacollector` | `mta.yaml` (resource `ro-order-destination`) |
+| Agent `@sap/xotel-agent-ext-js` 2.0.5 from SAP RBSC, `@cap-js/telemetry` 2.0.1, `@opentelemetry/exporter-logs-otlp-grpc` | `package.json` dependencies |
+| RBSC login `_auth=${SAP_NPM_AUTH}` (never the real value in Git) | `.npmrc` |
+| Start script `node ${NODE_ARGS} ./node_modules/.bin/cds-serve` | `package.json` scripts |
+| `cds.requires.telemetry.logging` -> processor `ExmLogProcessor`, exporter `OTLPLogExporter` | `package.json` |
+| `SAP_CALM_SERVICE_NAME`, `SAP_CALM_SERVICE_TYPE: SAP_CP_CF`, `NODE_ARGS: -r @sap/xotel-agent-ext-js` | `mta.yaml` (ro-order-srv) |
+| node_modules installed into `gen/srv` at build and packed into the MTAR (no RBSC access needed in CF) | `mta.yaml` (before-all, ro-order-srv build-parameters) |
+| Destination service binding (agent reads `CALM_datacollector`) | `mta.yaml` (resource `ro-order-destination`) |
+| Errors logged with `cds.log`, 5xx with the Error object (stack trace) | `srv/order-service.js` |
 
-**To activate in SAP Cloud ALM:** build & deploy, then in Cloud ALM open the monitoring app (e.g. Integration & Exception Monitoring)
--> Configuration -> switch the service `ro-order-srv` (SAP BTP, Cloud Foundry environment) ON for the use case.
-Then trigger traffic in the UI (Place Order for HT-1068 -> 409, Sync to S/4HANA -> 500).
+Prerequisites:
+1. **Build pipeline:** secret `SAP_NPM_AUTH` = "NPM Base64 Credentials" of the RBSC technical user (RBSC UI).
+2. **BTP provider subaccount:** destination `CALM_datacollector` - HTTP, Internet, OAuth2ClientCredentials, URL = Cloud ALM API
+   endpoint, client ID / secret / token URL from the Cloud ALM API service key ("Check Connection" may return 404, that is fine).
+3. **Cloud ALM:** activate Exception Monitoring for the service `ro-order-srv` (IEM -> Configuration).
+4. Trigger errors in the UI (HT-1068 -> 409, Sync to S/4HANA -> 500, Simulate Null Pointer -> 500).
 
-**Troubleshooting:** `SAP_CALM_DCI_LOG_LEVEL=debug` (agent log), `OTEL_LOG_LEVEL=info` (OpenTelemetry diagnostics).
-Emergency off switch: `SAP_CALM_LOGS_ENABLED=false` (logs only) or `SAP_CALM_INSTRUMENTATION_ENABLED=false` (everything), then restart.
-
-## SAP Cloud ALM on a BTP trial subaccount (push via Raw Data Inbound Logs API)
-
-A trial subaccount is not discovered by Cloud ALM automatically. Therefore `srv/calm-push.js` also pushes every
-**warning and error** written with `cds.log` to a service that is created **manually** in Cloud ALM:
-
-```
-cds.log warn/error -> srv/calm-push.js (buffer) -> destination CALM_datacollector (OAuth2 client credentials)
-  -> POST <Cloud ALM>/api/calm-logs/v1/logs?useCase=exm.im&serviceId=<LMS ID>  -> IEM -> Exceptions
-```
-
-| Setting (`mta.yaml`, ro-order-srv) | Meaning |
-|---|---|
-| `SAP_CALM_PUSH_ENABLED` | `true` switches the push on |
-| `SAP_CALM_PUSH_SERVICE_ID` | LMS ID of the service in Cloud ALM Landscape Management (mandatory, push stays off while empty) |
-| `SAP_CALM_PUSH_DESTINATION` | BTP destination to the Cloud ALM API (default `CALM_datacollector`) |
-| `SAP_CALM_PUSH_USE_CASE` | `exm.im` = Integration & Exception Monitoring exceptions |
-| `SAP_CALM_PUSH_DEV` | `true` = synchronous dev mode with error details (max 100 calls / 24 h); `false` for normal use |
-| `SAP_CALM_PUSH_INTERVAL` | seconds between pushes (default 60, 900 in dev mode) |
-| `SAP_CALM_PUSH_LEVEL` | `warn` (default, warnings + errors) or `error` |
-
-Prerequisites in Cloud ALM / BTP:
-1. Landscape Management: create the service for `ro-order-srv` and copy its **LMS ID** into `SAP_CALM_PUSH_SERVICE_ID`
-   (or without redeploy: `cf set-env ro-order-srv SAP_CALM_PUSH_SERVICE_ID <id>` + `cf restart ro-order-srv`).
-2. Integration & Exception Monitoring -> Configuration: switch data collection **on** for that service (otherwise HTTP 403).
-3. The OAuth client in destination `CALM_datacollector` needs the scopes `calm-api.logs.write` and `calm-api.exm.write`.
-
-The backend log shows `SAP Cloud ALM log push active ...` and `pushed N log record(s) to SAP Cloud ALM (HTTP 202)`,
-or `push to SAP Cloud ALM failed ...` with the HTTP status and Cloud ALM's error text.
+Troubleshooting: `SAP_CALM_DCI_LOG_LEVEL=debug` (agent log), `OTEL_LOG_LEVEL=info` (OpenTelemetry diagnostics).
 
 ## Notes
 

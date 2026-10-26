@@ -1,6 +1,5 @@
 const cds = require('@sap/cds');
 const LOG = cds.log('order-service');
-require('./srv/calm-push'); // pushes warnings/errors to SAP Cloud ALM (Raw Data Inbound Logs API), see srv/calm-push.js
 
 const SEED_PRODUCTS = [
   { ID: 'HT-1000', name: 'Notebook Basic 15',        category: 'Notebooks',   price: 956.00,  currency: 'EUR', stock: 25 },
