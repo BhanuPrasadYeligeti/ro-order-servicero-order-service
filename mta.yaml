@@ -26,8 +26,8 @@ modules:
     path: gen/srv
     parameters:
       buildpack: nodejs_buildpack
-      memory: 256M
-      disk-quota: 512M
+      memory: 512M
+      disk-quota: 1024M
     build-parameters:
       # node_modules + package-lock.json were installed into gen/srv in before-all and are packed into the MTAR
       # (SAP: "make sure that node modules and the package-lock.json are included in your mtar").
