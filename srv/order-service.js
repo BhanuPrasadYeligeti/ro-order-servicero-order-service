@@ -65,7 +65,7 @@ module.exports = class OrderService extends cds.ApplicationService {
     });
 
     // Every failed request (4xx business errors and 5xx technical errors) is logged with cds.log.
-    // srv/calm-push.js picks up every warning/error cds.log record and pushes it to SAP Cloud ALM (IEM -> Exceptions),
+    // @cap-js/telemetry hands every cds.log record to the SAP Cloud ALM agent (ExmLogProcessor) -> IEM -> Exceptions,
     // with exception.message / exception.stacktrace when an Error object is passed.
     this.on('error', (err, req) => {
       const status = err.status || err.statusCode || (Number(err.code) >= 400 ? Number(err.code) : 500);
