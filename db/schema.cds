@@ -32,7 +32,7 @@ entity Products {
 @assert.unique: { customerPO: [customerPO] }
 entity Orders : cuid, managed {
   orderNo    : String(20);
-  customerPO : String(35);                 // customer's purchase order number, e.g. PO-BOSCH-2026-1045
+  customerPO : String(35);                 // customer's purchase order number, e.g. PO-CLOUDFULCRUM-2026-1045
   customer   : Association to Customers;
   product    : Association to Products;
   quantity   : Integer;
