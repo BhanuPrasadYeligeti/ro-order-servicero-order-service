@@ -26,13 +26,14 @@ sap.ui.define([
 
   const newPO = (customerID) => {
     const c = model && model.getProperty("/customers").find((x) => x.ID === customerID);
-    const short = c ? c.name.split(" ")[0].replace(/[^A-Za-z]/g, "").toUpperCase() : "CUST";
+    // e.g. "Cloudfulcrum Pvt Ltd" -> CLOUDFULCRUM, "SAP CPI" -> SAPCPI, "Dwp Global Corp" -> DWPGLOBAL
+    const short = c ? c.name.replace(/\b(pvt|ltd|corp|inc)\b\.?/gi, "").replace(/[^A-Za-z]/g, "").toUpperCase().slice(0, 12) : "CUST";
     return `PO-${short}-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
   };
 
   const model = new JSONModel({
     customers: [], products: [], orders: [],
-    customerID: "C-1001", customerPO: "PO-BOSCH-" + new Date().getFullYear() + "-1045", productID: "HT-1000", quantity: 1
+    customerID: "C-1001", customerPO: "PO-CLOUDFULCRUM-" + new Date().getFullYear() + "-1045", productID: "HT-1000", quantity: 1
   });
 
   // Every request gets a reference ID (x-correlation-id). The backend logs it with every record,
