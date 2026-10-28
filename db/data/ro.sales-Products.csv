@@ -1,7 +1,7 @@
-ID;name;category;price;currency;stock
-HT-1000;Notebook Basic 15;Notebooks;956.00;EUR;25
-HT-1001;Notebook Basic 17;Notebooks;1249.00;EUR;10
-HT-1010;Notebook Professional 15;Notebooks;1999.00;EUR;3
-HT-1063;Ergonomic Keyboard;Accessories;14.00;EUR;150
-HT-1068;Wireless Mouse;Accessories;9.00;EUR;0
-HT-9992;Flat Screen Monitor 24;Monitors;234.00;EUR;40
+ID;name;category;price;currency;stock;reorderLevel;packSize;maxOrderQty;discontinued;successor
+HT-1000;Notebook Basic 15;Notebooks;956.00;EUR;25;5;1;20;false;
+HT-1001;Notebook Basic 17;Notebooks;1249.00;EUR;10;5;1;20;true;HT-1000
+HT-1010;Notebook Professional 15;Notebooks;1999.00;EUR;3;5;1;10;false;
+HT-1063;Ergonomic Keyboard;Accessories;14.00;EUR;150;20;10;500;false;
+HT-1068;Wireless Mouse;Accessories;9.00;EUR;0;20;1;500;false;
+HT-9992;Flat Screen Monitor 24;Monitors;234.00;EUR;40;10;1;20;false;
