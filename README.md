@@ -27,12 +27,24 @@ Open the **ro-order-app** route, e.g. `https://<org>-<space>-ro-order-app.cfapps
 
 ## What you can do in the UI (and what it produces in the backend logs)
 
-| Action in UI | Backend result | Backend log |
-|---|---|---|
-| Open app | Products list loads | info |
-| Place Order (HT-1000, qty 2) | Order `SO-xxxxxxxx` created | info |
-| Place Order for **HT-1068** (stock 0) | **409** "Insufficient stock" | **error** |
-| **Sync to S/4HANA** | **500** "Connection to S/4HANA backend failed: ECONNREFUSED" | **error + stack trace** |
+Each event is logged **once** at the right level: business rejections = `warn`, technical failures = `error` with stack trace.
+
+| # | Action in UI (Place Order) | Result | Backend log |
+|---|---|---|---|
+| 1 | Bosch India (C-1001), HT-1000, qty 2, PO `PO-BOSCH-2026-1045` | Order `SO-xxxxxxxx` created | info |
+| 2 | Click **Place Order** again with the same PO (double click / interface resend) | **409 Duplicate purchase order** – real SQL error `SQLITE_CONSTRAINT_UNIQUE`, stock update rolled back | **error + stack trace** |
+| 3 | HT-1010, qty 5 (only 3 in stock) / HT-1068 (stock 0) | **409 Out of stock** | warn |
+| 4 | Mahindra & Mahindra (C-1004, limit 5,000 EUR), HT-1010, qty 3 = 5,997 EUR | **409 Credit limit exceeded** | warn |
+| 5 | Tata Motors (C-1002) | **403 Customer blocked** (overdue invoices) | warn |
+| 6 | HT-1001 Notebook Basic 17 | **410 Product discontinued**, successor HT-1000 | warn |
+| 7 | HT-1063 Keyboard, qty 15 (pack size 10) | **400 Invalid quantity** | warn |
+| 8 | HT-9992 Monitor, qty 25 (max 20 per order) | **400 Quantity too high** | warn |
+| 9 | HT-1010, qty 1 (stock drops below reorder level 5) | Order created | info + **warn** "Low stock" |
+| 10 | **Sync to S/4HANA** | **500** "Connection to S/4HANA backend failed: ECONNREFUSED" | **error + stack trace** |
+| 11 | **Simulate Null Pointer** | **500** TypeError | **error + stack trace** |
+
+Technical errors show a **Reference** ID in the popup (`x-correlation-id`), which is logged with every record (`correlation.id` in Cloud ALM).
+If the backend app is stopped (BTP trial stops apps daily), the UI says "order service is not reachable" instead of a raw HTTP 404 -> `cf start ro-order-srv`.
 
 The error scenarios are intentional, so there is real runtime data for monitoring (e.g. SAP Cloud ALM Integration & Exception Monitoring).
 
