@@ -1,6 +1,6 @@
 ID;name;city;creditLimit;currency;blocked;blockReason
-C-1001;Bosch India Pvt Ltd;Bengaluru;25000.00;EUR;false;
-C-1002;Tata Motors Ltd;Pune;50000.00;EUR;true;Order block: invoices overdue more than 60 days
-C-1003;Infosys Ltd;Mysuru;100000.00;EUR;false;
-C-1004;Mahindra & Mahindra Ltd;Mumbai;5000.00;EUR;false;
-C-1005;Wipro Ltd;Bengaluru;40000.00;EUR;false;
+C-1001;Cloudfulcrum Pvt Ltd;Bengaluru;25000.00;EUR;false;
+C-1002;Release Owl;Pune;50000.00;EUR;true;Order block: invoices overdue more than 60 days
+C-1003;Dwp Global Corp;Mysuru;100000.00;EUR;false;
+C-1004;SAP CPI;Mumbai;5000.00;EUR;false;
+C-1005;SAP BTP;Bengaluru;40000.00;EUR;false;
