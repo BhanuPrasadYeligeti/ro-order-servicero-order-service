@@ -31,11 +31,11 @@ Each event is logged **once** at the right level: business rejections = `warn`, 
 
 | # | Action in UI (Place Order) | Result | Backend log |
 |---|---|---|---|
-| 1 | Bosch India (C-1001), HT-1000, qty 2, PO `PO-BOSCH-2026-1045` | Order `SO-xxxxxxxx` created | info |
+| 1 | Cloudfulcrum Pvt Ltd (C-1001), HT-1000, qty 2, PO `PO-CLOUDFULCRUM-2026-1045` | Order `SO-xxxxxxxx` created | info |
 | 2 | Click **Place Order** again with the same PO (double click / interface resend) | **409 Duplicate purchase order** – real SQL error `SQLITE_CONSTRAINT_UNIQUE`, stock update rolled back | **error + stack trace** |
 | 3 | HT-1010, qty 5 (only 3 in stock) / HT-1068 (stock 0) | **409 Out of stock** | warn |
-| 4 | Mahindra & Mahindra (C-1004, limit 5,000 EUR), HT-1010, qty 3 = 5,997 EUR | **409 Credit limit exceeded** | warn |
-| 5 | Tata Motors (C-1002) | **403 Customer blocked** (overdue invoices) | warn |
+| 4 | SAP CPI (C-1004, limit 5,000 EUR), HT-1010, qty 3 = 5,997 EUR | **409 Credit limit exceeded** | warn |
+| 5 | Release Owl (C-1002) | **403 Customer blocked** (overdue invoices) | warn |
 | 6 | HT-1001 Notebook Basic 17 | **410 Product discontinued**, successor HT-1000 | warn |
 | 7 | HT-1063 Keyboard, qty 15 (pack size 10) | **400 Invalid quantity** | warn |
 | 8 | HT-9992 Monitor, qty 25 (max 20 per order) | **400 Quantity too high** | warn |

@@ -13,11 +13,11 @@ const SEED_PRODUCTS = [
 ];
 
 const SEED_CUSTOMERS = [
-  { ID: 'C-1001', name: 'Bosch India Pvt Ltd',     city: 'Bengaluru', creditLimit: 25000.00,  currency: 'EUR', blocked: false },
-  { ID: 'C-1002', name: 'Tata Motors Ltd',         city: 'Pune',      creditLimit: 50000.00,  currency: 'EUR', blocked: true, blockReason: 'Order block: invoices overdue more than 60 days' },
-  { ID: 'C-1003', name: 'Infosys Ltd',             city: 'Mysuru',    creditLimit: 100000.00, currency: 'EUR', blocked: false },
-  { ID: 'C-1004', name: 'Mahindra & Mahindra Ltd', city: 'Mumbai',    creditLimit: 5000.00,   currency: 'EUR', blocked: false },
-  { ID: 'C-1005', name: 'Wipro Ltd',               city: 'Bengaluru', creditLimit: 40000.00,  currency: 'EUR', blocked: false }
+  { ID: 'C-1001', name: 'Cloudfulcrum Pvt Ltd',   city: 'Bengaluru', creditLimit: 25000.00,  currency: 'EUR', blocked: false },
+  { ID: 'C-1002', name: 'Release Owl',            city: 'Pune',      creditLimit: 50000.00,  currency: 'EUR', blocked: true, blockReason: 'Order block: invoices overdue more than 60 days' },
+  { ID: 'C-1003', name: 'Dwp Global Corp',        city: 'Mysuru',    creditLimit: 100000.00, currency: 'EUR', blocked: false },
+  { ID: 'C-1004', name: 'SAP CPI',                city: 'Mumbai',    creditLimit: 5000.00,   currency: 'EUR', blocked: false },
+  { ID: 'C-1005', name: 'SAP BTP',                city: 'Bengaluru', creditLimit: 40000.00,  currency: 'EUR', blocked: false }
 ];
 
 // The app uses an in-memory SQLite DB (test app, no HANA needed).
